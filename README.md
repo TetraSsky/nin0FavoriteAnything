@@ -67,7 +67,14 @@ If you encounter any issues or have feature requests (This will entirely depend 
 This plugin is built for and requires [Vencord](https://github.com/Vendicated/Vencord), a Discord client mod! Big thanks to them ❤️❤️❤️!
 
 ## Star History
-[![Star History Chart](https://api.star-history.com/svg?repos=TetraSsky/nin0FavoriteAnything&type=Date)](https://www.star-history.com/#TetraSsky/nin0FavoriteAnything&Date)
+
+<a href="https://www.star-history.com/?repos=tetrassky%2Fneatfavoriteanything&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=tetrassky/neatfavoriteanything&type=date&theme=dark&legend=top-left&sealed_token=fL5AL80NRJCfVEOLSh_yZWdKCHCKXjOylrFf4r-A3jvzd1rudBhDoH18T_MIp9nbWLorfyj6DkMyv4EIZNelhFJslTOW7ngmgWHPbZ5UHhVcwCMy_G4mpzzFIfYtzuaWmXx9e3gBScH5-gXt-8yF7YmAcDM6OMXVDXnndigl5MsnU2seFxZMpopFed3_" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=tetrassky/neatfavoriteanything&type=date&legend=top-left&sealed_token=fL5AL80NRJCfVEOLSh_yZWdKCHCKXjOylrFf4r-A3jvzd1rudBhDoH18T_MIp9nbWLorfyj6DkMyv4EIZNelhFJslTOW7ngmgWHPbZ5UHhVcwCMy_G4mpzzFIfYtzuaWmXx9e3gBScH5-gXt-8yF7YmAcDM6OMXVDXnndigl5MsnU2seFxZMpopFed3_" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=tetrassky/neatfavoriteanything&type=date&legend=top-left&sealed_token=fL5AL80NRJCfVEOLSh_yZWdKCHCKXjOylrFf4r-A3jvzd1rudBhDoH18T_MIp9nbWLorfyj6DkMyv4EIZNelhFJslTOW7ngmgWHPbZ5UHhVcwCMy_G4mpzzFIfYtzuaWmXx9e3gBScH5-gXt-8yF7YmAcDM6OMXVDXnndigl5MsnU2seFxZMpopFed3_" />
+ </picture>
+</a>
 
 ## License
 MIT License - See [LICENSE](LICENSE) for details.
