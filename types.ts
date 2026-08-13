@@ -18,6 +18,13 @@ export enum ExpressionPickerView {
     FILES = "files"
 }
 
+// Discord's gif picker component class
+export interface GifPickerClass {
+    new(props: { onSelectGIF: (item: { url: string }) => void }): {
+        handleSelectGIF: (item: { url: string }) => void;
+    };
+}
+
 // Discord's shared chat input button
 export interface ChatInputButtonProps extends PropsWithChildren {
     className?: string;

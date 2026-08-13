@@ -17,7 +17,7 @@ import { ComponentType, ReactNode } from "react";
 import { AttachmentAccessory, EmbedAccessory, FilePicker, ImagePicker, VideoPicker } from "./components";
 import { SignedUrlsStore } from "./stores";
 import managedStyle from "./style.css?managed";
-import { AttachmentItem, ChatInputButtonProps, EmbedComponent, ExpressionPickerTabProps, ExpressionPickerView, FavouriteItem, FavouriteItemFormat, FullEmbed } from "./types";
+import { AttachmentItem, ChatInputButtonProps, EmbedComponent, ExpressionPickerTabProps, ExpressionPickerView, FavouriteItem, FavouriteItemFormat, FullEmbed, GifPickerClass } from "./types";
 import { getThumbnailUrl, isMediaItem } from "./utils";
 
 export const EmbedContext = proxyLazyWebpack(() => React.createContext<null | FullEmbed>(null));
@@ -102,7 +102,7 @@ export default definePlugin({
     description: "Favourite any image, video, or file attachment",
     authors: [Devs.nin0dev, { name: "Davri", id: 457579346282938368n }],
     managedStyle,
-    capturedGifSelect: null as null | ((item: { url: string; }) => void),
+    gifPickerClass: null as null | GifPickerClass,
     patches: [
         // CHATBAR BUTTONS
         {
@@ -172,12 +172,11 @@ export default definePlugin({
             ]
         },
         {
-            // Capture inner picker's "handleSelectGIF" callback so image can go through
-            // the same interception path used by native GIF selection (GifPaste patch)
+
             find: "handleSelectGIF=",
             replacement: {
-                match: /onSelectGIF:this\.handleSelectGIF/,
-                replace: "onSelectGIF:$self.captureHandleSelectGIF(this.handleSelectGIF)"
+                match: /class \i extends \i\.PureComponent\{(?=state=\{resultType:null\})/,
+                replace: "$&static vcFavouriteAnything=$self?.captureGifPicker(this);"
             }
         },
         {
@@ -246,31 +245,28 @@ export default definePlugin({
     },
     renderFilePicker(activeView: ExpressionPickerView, onSelectGIF: (item: { url: string; }) => void) {
         if (activeView === ExpressionPickerView.IMAGE) {
-            return <ImagePicker onSelectItem={item => this.handleSelectImage(item, onSelectGIF)} />;
+            return <ImagePicker onSelectItem={item => this.handleSelectItem(item, onSelectGIF)} />;
         }
 
         if (activeView === ExpressionPickerView.VIDEO) {
-            return <VideoPicker onSelectItem={item => this.handleSelectImage(item, onSelectGIF)} />;
+            return <VideoPicker onSelectItem={item => this.handleSelectItem(item, onSelectGIF)} />;
         }
 
         if (activeView === ExpressionPickerView.FILES) {
-            return <FilePicker onSelectItem={onSelectGIF} />;
+            return <FilePicker onSelectItem={item => this.handleSelectItem(item, onSelectGIF)} />;
         }
 
         return null;
     },
-    captureHandleSelectGIF(handler: (item: { url: string; }) => void) {
-        this.capturedGifSelect = handler;
-        return handler;
+    captureGifPicker(gifPicker: GifPickerClass) {
+        this.gifPickerClass = gifPicker;
+        return gifPicker;
     },
-    handleSelectImage(item: { url: string; }, onSelectGIF: (item: { url: string; }) => void) {
-        const handle = this.capturedGifSelect;
-        // Fallback to the GIF handler if not captured
-        if (handle) {
-            handle(item);
-        } else {
-            onSelectGIF(item);
-        }
+    handleSelectItem(item: { url: string; }, onSelectGIF: (item: { url: string; }) => void) {
+        const GifPicker = this.gifPickerClass;
+        if (!GifPicker) return onSelectGIF(item);
+
+        new GifPicker({ onSelectGIF }).handleSelectGIF(item);
     },
     renderAttachment(children: ReactNode, props: { item: AttachmentItem; }) {
         return <AttachmentContext.Provider value={props.item}>{children}</AttachmentContext.Provider>;
