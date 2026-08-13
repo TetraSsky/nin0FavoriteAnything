@@ -5,7 +5,7 @@
  */
 
 import { Channel, Embed, EmbedJSON, Message, MessageAttachment, TextInput } from "@vencord/discord-types";
-import { Component, ComponentClass, ComponentProps, ComponentPropsWithRef, Key, PropsWithChildren, ReactNode, RefObject } from "react";
+import { Component, ComponentClass, ComponentProps, ComponentPropsWithRef, ComponentType, Key, PropsWithChildren, ReactNode, RefObject } from "react";
 import { JsonValue, PartialDeep } from "type-fest";
 
 export enum ExpressionPickerView {
@@ -16,6 +16,30 @@ export enum ExpressionPickerView {
     STICKER = "sticker",
     SOUNDBOARD = "soundboard",
     FILES = "files"
+}
+
+// Discord's shared chat input button
+export interface ChatInputButtonProps extends PropsWithChildren {
+    className?: string;
+    childClassName?: string;
+    iconClassName?: string;
+    icon?: ComponentType<{ className?: string; color?: string }>;
+    disabled?: boolean;
+    isActive?: boolean;
+    pulse?: boolean;
+    sparkle?: boolean;
+    notification?: boolean;
+    noHover?: boolean;
+    onClick?: () => void;
+    onDoubleClick?: () => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
+    "aria-label"?: string;
+    "aria-expanded"?: boolean;
+    "aria-haspopup"?: string;
+    "aria-controls"?: string;
 }
 
 export interface ExpressionPickerTabProps extends PropsWithChildren {

@@ -9,37 +9,82 @@ import { FolderIcon, ImageIcon } from "@components/Icons";
 import { Devs } from "@utils/constants";
 import { getIntlMessage } from "@utils/discord";
 import definePlugin from "@utils/types";
-import { findCssClassesLazy, proxyLazyWebpack } from "@webpack";
-import { ExpressionPickerStore, React } from "@webpack/common";
+import { ExpressionPickerStoreState } from "@vencord/discord-types";
+import { findComponentByCodeLazy, findCssClassesLazy, proxyLazyWebpack } from "@webpack";
+import { ExpressionPickerStore, React, useEffect, useRef, useState } from "@webpack/common";
 import { ComponentType, ReactNode } from "react";
 
 import { AttachmentAccessory, EmbedAccessory, FilePicker, ImagePicker, VideoPicker } from "./components";
 import { SignedUrlsStore } from "./stores";
 import managedStyle from "./style.css?managed";
-import { AttachmentItem, EmbedComponent, ExpressionPickerTabProps, ExpressionPickerView, FavouriteItem, FavouriteItemFormat, FullEmbed } from "./types";
+import { AttachmentItem, ChatInputButtonProps, EmbedComponent, ExpressionPickerTabProps, ExpressionPickerView, FavouriteItem, FavouriteItemFormat, FullEmbed } from "./types";
 import { getThumbnailUrl, isMediaItem } from "./utils";
 
 export const EmbedContext = proxyLazyWebpack(() => React.createContext<null | FullEmbed>(null));
 export const EmbedMosaicContext = proxyLazyWebpack(() => React.createContext<null | number>(null));
 export const AttachmentContext = proxyLazyWebpack(() => React.createContext<null | AttachmentItem>(null));
 
-const ButtonWrapperClasses = findCssClassesLazy("button", "buttonWrapper", "notificationDot");
 const ChannelTextAreaClasses = findCssClassesLazy("buttonContainer", "channelTextArea", "button");
+const ChatInputButton = findComponentByCodeLazy<ChatInputButtonProps>("focusProps:{offset:{top:4,bottom:4}}");
 
-function PickerButton({ onClick, children }: { onClick: () => void; children: ReactNode; }) {
+type PulseTarget = ExpressionPickerView.IMAGE | ExpressionPickerView.VIDEO | ExpressionPickerView.FILES;
+
+const pulseListeners = new Map<PulseTarget, Set<() => void>>();
+
+function pulse(target: PulseTarget) {
+    pulseListeners.get(target)?.forEach(listener => listener());
+}
+
+function usePulse(target: PulseTarget) {
+    const [isPulsing, setIsPulsing] = useState(false);
+    const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+    useEffect(() => {
+        const listener = () => {
+            setIsPulsing(true);
+            clearTimeout(timeout.current);
+            timeout.current = setTimeout(() => setIsPulsing(false), 2000);
+        };
+
+        const listeners = pulseListeners.get(target) ?? new Set<() => void>();
+        pulseListeners.set(target, listeners);
+
+        listeners.add(listener);
+        return () => {
+            listeners.delete(listener);
+            clearTimeout(timeout.current);
+        };
+    }, [target]);
+
+    return isPulsing;
+}
+
+function PickerButton({ view, viewType, channelId, label, onClick, children }: {
+    view: PulseTarget;
+    viewType: any;
+    channelId: string;
+    label: string;
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    const isPulsing = usePulse(view);
+    const isActive = ExpressionPickerStore.useExpressionPickerStore((store: ExpressionPickerStoreState) => store.activeView === view && store.activeViewType === viewType && store.activeChannelId === channelId);
+    const pickerId = ExpressionPickerStore.useExpressionPickerStore((store: ExpressionPickerStoreState) => store.pickerId);
+
     return (
         <div className={`expression-picker-chat-input-button ${ChannelTextAreaClasses?.buttonContainer ?? ""}`}>
-            <div
-                role="button"
-                tabIndex={0}
-                className={`${ButtonWrapperClasses?.button ?? ""} ${ChannelTextAreaClasses?.button ?? ""}`}
+            <ChatInputButton
+                className={ChannelTextAreaClasses?.button}
                 onClick={onClick}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") onClick(); }}
+                isActive={isActive}
+                pulse={isPulsing}
+                aria-label={label}
+                aria-expanded={isActive}
+                aria-haspopup="dialog"
+                aria-controls={pickerId}
             >
-                <div className={ButtonWrapperClasses?.buttonWrapper ?? ""}>
-                    {children}
-                </div>
-            </div>
+                {children}
+            </ChatInputButton>
         </div>
     );
 }
@@ -147,9 +192,9 @@ export default definePlugin({
         {
             find: "#{intl::GIF_TOOLTIP_REMOVE_FROM_FAVORITES}",
             replacement: {
-                // Intercept the onClick callback to replace the placeholder thumbnail with a valid CDN link
-                match: /\(0,(\i\.\i)\)\((\{[^}].{40,60}?\})\)/,
-                replace: "$self.interceptAddToFavourites($2).then($1)"
+                // Catch onClick callback to replace the placeholder thumbnail with a valid CDN link
+                match: /\(0,(\i\.\i)\)\((\{[^}].{40,60}?\})\),(\i\.\i)\.dispatch\((\i\.\i)\.FAVORITE_GIF\)/,
+                replace: "$self.interceptAddToFavourites($2).then($1),$self.handleFavourited($2,()=>$3.dispatch($4.FAVORITE_GIF))"
             }
         }
     ],
@@ -241,6 +286,13 @@ export default definePlugin({
     filterGifs: (item: FavouriteItem & { url?: string; }) => {
         return isMediaItem(item);
     },
+    handleFavourited(item: FavouriteItem & { url: string; }, dispatchGifPulse: () => void) {
+        if (isMediaItem(item)) return dispatchGifPulse();
+
+        if (item.format === FavouriteItemFormat.NONE) pulse(ExpressionPickerView.FILES);
+        else if (item.format === FavouriteItemFormat.IMAGE) pulse(ExpressionPickerView.IMAGE);
+        else if (item.format === FavouriteItemFormat.VIDEO) pulse(ExpressionPickerView.VIDEO);
+    },
     interceptAddToFavourites: async (item: FavouriteItem & { url: string; }) => {
         if (item.format !== FavouriteItemFormat.NONE) return item;
 
@@ -260,7 +312,7 @@ export default definePlugin({
     },
     openCustomExpressionPicker(view: ExpressionPickerView, activeViewType: any, channelId: string) {
         ExpressionPickerStore.setSearchQuery("");
-        (ExpressionPickerStore as any).openExpressionPicker(view, activeViewType, channelId);
+        ExpressionPickerStore.toggleExpressionPicker(view, activeViewType, channelId);
     },
     injectMediaButtons(buttons: ReactNode[], props: ChatBarProps) {
         // Called BEFORE "_injectButtons", "buttons" is Discord's original array
@@ -303,13 +355,13 @@ export default definePlugin({
         const channelId = props?.channel?.id ?? "";
 
         buttons.splice(insertIdx, 0,
-            <PickerButton key="fav-image-btn" onClick={() => this.openCustomExpressionPicker(ExpressionPickerView.IMAGE, props?.type, channelId)}>
+            <PickerButton key="fav-image-btn" view={ExpressionPickerView.IMAGE} viewType={props?.type} channelId={channelId} label="Open image tab" onClick={() => this.openCustomExpressionPicker(ExpressionPickerView.IMAGE, props?.type, channelId)}>
                 <ImageIcon width={20} height={20} />
             </PickerButton>,
-            <PickerButton key="fav-video-btn" onClick={() => this.openCustomExpressionPicker(ExpressionPickerView.VIDEO, props?.type, channelId)}>
+            <PickerButton key="fav-video-btn" view={ExpressionPickerView.VIDEO} viewType={props?.type} channelId={channelId} label="Open video tab" onClick={() => this.openCustomExpressionPicker(ExpressionPickerView.VIDEO, props?.type, channelId)}>
                 <VideoIcon width={20} height={20} />
             </PickerButton>,
-            <PickerButton key="fav-files-btn" onClick={() => this.openCustomExpressionPicker(ExpressionPickerView.FILES, props?.type, channelId)}>
+            <PickerButton key="fav-files-btn" view={ExpressionPickerView.FILES} viewType={props?.type} channelId={channelId} label="Open files tab" onClick={() => this.openCustomExpressionPicker(ExpressionPickerView.FILES, props?.type, channelId)}>
                 <FolderIcon width={20} height={20} />
             </PickerButton>
         );
