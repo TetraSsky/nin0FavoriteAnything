@@ -24,6 +24,21 @@ const Native = VencordNative.pluginHelpers.FavouriteAnything as PluginNative<typ
 
 export const cl = classNameFactory("vc-favouriteAnything-");
 
+// Discord's GIF picker loading MasonryListScroller module:
+// D = [unsafe_rawColors.PREMIUM_TIER_1_PURPLE.css,
+//  unsafe_rawColors.PREMIUM_TIER_1_BLUE.css,
+//  "#929AFA"]
+// `backgroundColor: loaded ? undefined : _.sample(D)`
+const PLACEHOLDER_COLORS = [
+    "var(--premium-tier-1-purple)",
+    "var(--premium-tier-1-blue)",
+    "#929AFA"
+] as const;
+
+export function getPlaceholderColor(): string {
+    return PLACEHOLDER_COLORS[Math.floor(Math.random() * PLACEHOLDER_COLORS.length)];
+}
+
 export const useResizeObserver: ResizeObserverHook = findByCodeLazy("borderBoxSize", "blockSize", "inlineSize");
 export const ImageUtils: ImageUtils_ = findByPropsLazy("isAnimated", "getFormatQuality");
 

@@ -16,7 +16,7 @@ import { ComponentProps, ComponentType, ReactNode, Ref } from "react";
 import { AttachmentContext, EmbedContext, EmbedMosaicContext } from ".";
 import { SignedUrlsStore } from "./stores";
 import { AttachmentItem, AttachmentsComponentProps, CustomItemFormat, ExpressionPickerView, FavoriteButtonProps, FavouriteItemFormat, FilePickerItemProps, FilePickerProps, FullMessageAttachment, ManaSearchBarProps, MessageComponentClass, ScrollerBaseRef } from "./types";
-import { cl, defs, hasPermission, ImageUtils, isDirectVideoFile, markExternalVideoSrc, markStaticImageSrc, sendAttachment, stripExternalVideoMarker, useFavourites, useImageFavourites, useListScroller, useResizeObserver, useVirtualizedMasonry, useVideoFavourites } from "./utils";
+import { cl, defs, getPlaceholderColor, hasPermission, ImageUtils, isDirectVideoFile, markExternalVideoSrc, markStaticImageSrc, sendAttachment, stripExternalVideoMarker, useFavourites, useImageFavourites, useListScroller, useResizeObserver, useVirtualizedMasonry, useVideoFavourites } from "./utils";
 
 const ManaSearchBar = findComponentByCodeLazy<ManaSearchBarProps>("#{intl::SEARCH}),ref");
 const FavoriteButton = findComponentByCodeLazy<FavoriteButtonProps>("#{intl::GIF_TOOLTIP_ADD_TO_FAVORITES}");
@@ -437,6 +437,7 @@ export function ImagePickerItem({ url, src, width, height, layout, onSubmit }: {
     );
 
     const [loaded, setLoaded] = useState(false);
+    const [placeholderColor] = useState(() => getPlaceholderColor());
 
     return (
         <div
@@ -446,7 +447,7 @@ export function ImagePickerItem({ url, src, width, height, layout, onSubmit }: {
             style={layout ? { position: "absolute", left: layout.left, top: layout.top, width: layout.width, height: layout.height } : undefined}
             onClick={() => onSubmit(url)}
         >
-            {!loaded && <div className={cl("image-placeholder")} />}
+            {!loaded && <div className={cl("image-placeholder")} style={{ background: placeholderColor }} />}
             <img src={resolvedSrc} alt="" className={cl("image-gif")} draggable={false} onLoad={() => setLoaded(true)} />
             <FavoriteButton
                 className={`${Classes.gifFavoriteButton} ${cl("image-fav-button")}`}
@@ -476,6 +477,7 @@ export function VideoPickerItem({ url, src, width, height, layout, onSubmit }: {
     const isDirectVideo = [cleanResolvedSrc, url].some(isDirectVideoFile);
 
     const [loaded, setLoaded] = useState(false);
+    const [placeholderColor] = useState(() => getPlaceholderColor());
 
     return (
         <div
@@ -485,7 +487,7 @@ export function VideoPickerItem({ url, src, width, height, layout, onSubmit }: {
             style={layout ? { position: "absolute", left: layout.left, top: layout.top, width: layout.width, height: layout.height } : undefined}
             onClick={() => onSubmit(url)}
         >
-            {!loaded && <div className={cl("image-placeholder")} />}
+            {!loaded && <div className={cl("image-placeholder")} style={{ background: placeholderColor }} />}
             {isDirectVideo ? (
                 <video src={cleanResolvedSrc} className={cl("image-gif")} draggable={false} autoPlay muted loop playsInline preload="metadata" onLoadedData={() => setLoaded(true)} />
             ) : (
