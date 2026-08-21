@@ -10,12 +10,12 @@ import { LazyComponentWrapper } from "@utils/lazyReact";
 import { Message } from "@vencord/discord-types";
 import { ChannelType } from "@vencord/discord-types/enums";
 import { findByCodeLazy, findComponentByCode, findComponentByCodeLazy, findCssClassesLazy, proxyLazyWebpack } from "@webpack";
-import { ChannelStore, ExpressionPickerStore, ListScrollerThin, lodash, PermissionsBits, PermissionStore, React, useCallback, useEffect, useMemo, useRef, useState, useStateFromStores } from "@webpack/common";
+import { ChannelStore, ExpressionPickerStore, ListScrollerThin, lodash, PermissionsBits, PermissionStore, React, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useStateFromStores } from "@webpack/common";
 import { ComponentProps, ComponentType, ReactNode, Ref } from "react";
 
 import { AttachmentContext, EmbedContext, EmbedMosaicContext } from ".";
 import { SignedUrlsStore } from "./stores";
-import { AttachmentItem, AttachmentsComponentProps, CustomItemFormat, FavoriteButtonProps, FavouriteItemFormat, FilePickerItemProps, FilePickerProps, FullMessageAttachment, ManaSearchBarProps, MessageComponentClass, ScrollerBaseRef } from "./types";
+import { AttachmentItem, AttachmentsComponentProps, CustomItemFormat, ExpressionPickerView, FavoriteButtonProps, FavouriteItemFormat, FilePickerItemProps, FilePickerProps, FullMessageAttachment, ManaSearchBarProps, MessageComponentClass, ScrollerBaseRef } from "./types";
 import { cl, defs, hasPermission, ImageUtils, isDirectVideoFile, markExternalVideoSrc, markStaticImageSrc, sendAttachment, stripExternalVideoMarker, useFavourites, useImageFavourites, useListScroller, useResizeObserver, useVirtualizedMasonry, useVideoFavourites } from "./utils";
 
 const ManaSearchBar = findComponentByCodeLazy<ManaSearchBarProps>("#{intl::SEARCH}),ref");
@@ -82,9 +82,10 @@ export const AttachmentPreview = proxyLazyWebpack(() => {
 export function FilePicker({ onSelectItem }: FilePickerProps) {
     const listRef = useRef<ScrollerBaseRef>(null);
 
-    const { channelId, query } = ExpressionPickerStore.useExpressionPickerStore(store => ({
+    const { channelId, query, activeView } = ExpressionPickerStore.useExpressionPickerStore(store => ({
         channelId: store.activeChannelId as string,
-        query: store.searchQuery
+        query: store.searchQuery,
+        activeView: store.activeView
     }));
 
     const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(channelId), [channelId]);
@@ -113,7 +114,12 @@ export function FilePicker({ onSelectItem }: FilePickerProps) {
         );
     };
 
-    useEffect(() => void listRef.current?.scrollToTop(), [query]);
+    useLayoutEffect(() => {
+        if (activeView !== ExpressionPickerView.FILES) return;
+        listRef.current?.scrollToTop();
+        const id = requestAnimationFrame(() => listRef.current?.scrollToTop());
+        return () => cancelAnimationFrame(id);
+    }, [query, activeView]);
 
     return (
         <div id="files-picker-tab-panel" role="tabpanel" aria-labelledby="files-picker-tab" className={cl("container")}>
@@ -170,8 +176,9 @@ function computeImageLayout(items: { width: number; height: number; }[], contain
 }
 
 export function ImagePicker({ onSelectItem }: FilePickerProps) {
-    const { query } = ExpressionPickerStore.useExpressionPickerStore(store => ({
-        query: store.searchQuery
+    const { query, activeView } = ExpressionPickerStore.useExpressionPickerStore(store => ({
+        query: store.searchQuery,
+        activeView: store.activeView
     }));
 
     const favs = useImageFavourites(query);
@@ -183,7 +190,12 @@ export function ImagePicker({ onSelectItem }: FilePickerProps) {
     const [containerWidth, setContainerWidth] = useState(496);
     useResizeObserver(scrollerRef, ({ width }) => setContainerWidth(width), []);
 
-    useEffect(() => { scrollerRef.current?.scrollTo(0, 0); }, [query]);
+    useLayoutEffect(() => {
+        if (activeView !== ExpressionPickerView.IMAGE) return;
+        scrollerRef.current?.scrollTo(0, 0);
+        const id = requestAnimationFrame(() => scrollerRef.current?.scrollTo(0, 0));
+        return () => cancelAnimationFrame(id);
+    }, [query, activeView]);
 
     const layout = useMemo(
         () => (favs ? computeImageLayout(favs, containerWidth) : []),
@@ -245,8 +257,9 @@ export function ImagePicker({ onSelectItem }: FilePickerProps) {
 }
 
 export function VideoPicker({ onSelectItem }: FilePickerProps) {
-    const { query } = ExpressionPickerStore.useExpressionPickerStore(store => ({
-        query: store.searchQuery
+    const { query, activeView } = ExpressionPickerStore.useExpressionPickerStore(store => ({
+        query: store.searchQuery,
+        activeView: store.activeView
     }));
 
     const favs = useVideoFavourites(query);
@@ -258,7 +271,12 @@ export function VideoPicker({ onSelectItem }: FilePickerProps) {
     const [containerWidth, setContainerWidth] = useState(496);
     useResizeObserver(scrollerRef, ({ width }) => setContainerWidth(width), []);
 
-    useEffect(() => { scrollerRef.current?.scrollTo(0, 0); }, [query]);
+    useLayoutEffect(() => {
+        if (activeView !== ExpressionPickerView.VIDEO) return;
+        scrollerRef.current?.scrollTo(0, 0);
+        const id = requestAnimationFrame(() => scrollerRef.current?.scrollTo(0, 0));
+        return () => cancelAnimationFrame(id);
+    }, [query, activeView]);
 
     const layout = useMemo(
         () => (favs ? computeImageLayout(favs, containerWidth) : []),
