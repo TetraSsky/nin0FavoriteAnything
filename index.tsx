@@ -100,7 +100,7 @@ function VideoIcon({ height = 20, width = 20, className }: { height?: number; wi
 export default definePlugin({
     name: "FavouriteAnything",
     description: "Favourite any image, video, or file attachment",
-    authors: [Devs.nin0dev, { name: "Davri", id: 457579346282938368n }],
+    authors: [Devs.nin0dev, { name: "Davri", id: 457579346282938368n }, { name: "Tetra_Sky", id: 406453997294190594n }],
     managedStyle,
     gifPickerClass: null as null | GifPickerClass,
     patches: [
