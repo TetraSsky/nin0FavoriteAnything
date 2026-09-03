@@ -18,7 +18,7 @@ import { SignedUrlsStore } from "./stores";
 import { AttachmentItem, AttachmentsComponentProps, CustomItemFormat, ExpressionPickerView, FavoriteButtonProps, FavouriteItemFormat, FilePickerItemProps, FilePickerProps, FullMessageAttachment, ManaSearchBarProps, MessageComponentClass, ScrollerBaseRef } from "./types";
 import { cl, defs, getPlaceholderColor, hasPermission, ImageUtils, isDirectVideoFile, markExternalVideoSrc, markStaticImageSrc, sendAttachment, stripExternalVideoMarker, useFavourites, useImageFavourites, useListScroller, useResizeObserver, useVirtualizedMasonry, useVideoFavourites } from "./utils";
 
-const ManaSearchBar = findComponentByCodeLazy<ManaSearchBarProps>("#{intl::SEARCH}),ref");
+const ManaSearchBar = findComponentByCodeLazy<ManaSearchBarProps>(".MagnifyingGlassIcon,onClear");
 const FavoriteButton = findComponentByCodeLazy<FavoriteButtonProps>("#{intl::GIF_TOOLTIP_ADD_TO_FAVORITES}");
 const SendIcon = findComponentByCodeLazy("M6.6 10.02 14 11.4a.6.6");
 
